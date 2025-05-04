@@ -8,7 +8,7 @@ env:
 
 
 jobs:
-  testing:
+  Testing:
     runs-on: ubuntu:latest
     steps:
       - name: "Source-code checkout"
@@ -50,8 +50,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
 
-  building the image and pushing to ecr:
-    needs: testing
+  Image_build_and_deploy:
+    needs: Testing
     runs-on: ubuntu-latest
     steps: 
 
