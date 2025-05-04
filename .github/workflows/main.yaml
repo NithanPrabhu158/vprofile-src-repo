@@ -1,0 +1,77 @@
+name: vprof-code
+on: workflow_dispatch
+env:
+  EKS_CLUSTER: vprof-eks-gitops
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: git-ops-vprof
+
+
+
+jobs:
+  testing:
+    runs-on: ubuntu:latest
+    steps:
+      - name: "Source-code checkout"
+        run: actions/checkout@v4
+
+      - name: "Maven Testing"
+        run: mvn test
+
+
+      - name: "Maven checkstyle"
+        run: mvn checkstyle:checkstyle
+
+      - name: "Java setup"
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+
+      - name: "Sonar setup"
+        run: warchant/setup-sonar-scanner@v7
+
+      - name: "Sonarquobe scanner"
+        run: sonar-scanner
+           -Dsonar.host.url=${{ secrets.SONAR_URL }}
+           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+           -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
+           -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+           -Dsonar.sources=src
+           -Dsonar.junit.reportsPath=target/surefire-reports
+           -Dsonar.jacoco.reportsPath=target/jacoco.exec 
+           -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml
+           -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest
+
+      - name: "Quality gates"
+        id: sonar-qg
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        timeout-minutes: 5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_URL }}
+
+  building the image and pushing to ecr:
+    needs: testing
+    runs-on: ubuntu-latest
+    steps: 
+
+      - name: "Source code Checkout"
+        uses: actions/checkout@v4
+
+      - name: "Build and publish to ECR"
+        uses: appleboy/docker-ecr-action@master
+        with:
+          access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY  }}
+          registry: ${{ secrets.REGISTRY }}
+   
+          repo: ${{env.ECR_REPOSITORY}}
+          region: us-east-1
+          tags: latest,${{github.run_number}}
+          daemon_off: false
+          dockerfile: ./Dockerfile
+          context: ./
+    
+  
+        
+  
