@@ -93,8 +93,8 @@ jobs:
         run: aws eks update-kubeconfig --region ${{env.AWS_REGION}} --name ${{env.EKS_CLUSTER}}
 
 
-      - name: "Storing the secret in the kube for helm"
-        run: kubectl create secret docker-registry regcred --docker-server=${{ secrets.REGISTRY }} --docker-username=AWS  --docker-password=$(aws ecr get-login-password)
+      # - name: "Storing the secret in the kube for helm"
+      #   run: kubectl create secret docker-registry regcred --docker-server=${{ secrets.REGISTRY }} --docker-username=AWS  --docker-password=$(aws ecr get-login-password)
 
 
       - name: deploy on eks using helm
